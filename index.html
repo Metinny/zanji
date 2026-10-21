@@ -74,19 +74,20 @@ body{background:radial-gradient(120% 80% at 50% 0%,#1d2035 0%,var(--ink) 60%);ba
 .wave{position:absolute;inset:-30%;width:160%;height:160%;pointer-events:none;overflow:visible;opacity:0;z-index:2}
 .card.cut .wave{animation:waveGo .5s cubic-bezier(.3,.1,.2,1) forwards}
 @keyframes waveGo{0%{opacity:1;transform:translate(-45%,10%) rotate(-11deg) scale(.7)}55%{opacity:1}100%{opacity:0;transform:translate(45%,-10%) rotate(-11deg) scale(1.1)}}
-.wave .crescent{fill:var(--steel);filter:drop-shadow(0 0 6px var(--steel)) drop-shadow(0 0 18px #7fc7ff)}
-.wave .core{fill:#fff}
-.wave .trail{fill:var(--steel);opacity:.25}
-.cutline{position:absolute;left:-10%;top:50%;width:120%;height:2px;transform-origin:0 50%;transform:rotate(-11.3deg) scaleX(0);background:#fff;box-shadow:0 0 10px var(--steel),0 0 24px var(--steel);opacity:0;pointer-events:none;z-index:2}
+.wave .crescent{fill:var(--gold);filter:drop-shadow(0 0 6px var(--gold)) drop-shadow(0 0 18px #ffe9a8)}
+.wave .core{fill:#fffbe6}
+.wave .trail{fill:var(--gold);opacity:.3}
+.cutline{position:absolute;left:-10%;top:50%;width:120%;height:2px;transform-origin:0 50%;transform:rotate(-11.3deg) scaleX(0);background:#fffbe6;box-shadow:0 0 10px var(--gold),0 0 24px var(--gold);opacity:0;pointer-events:none;z-index:2}
 .card.cut .cutline{animation:cutline .7s ease-out .12s forwards}
 @keyframes cutline{0%{opacity:1;transform:rotate(-11.3deg) scaleX(0)}30%{opacity:1;transform:rotate(-11.3deg) scaleX(1)}100%{opacity:0;transform:rotate(-11.3deg) scaleX(1)}}
-.flash{position:absolute;inset:0;background:var(--steel);opacity:0;pointer-events:none}
+.flash{position:absolute;inset:0;background:var(--gold);opacity:0;pointer-events:none}
 .card.cut .flash{animation:flash .35s ease-out .12s}
 @keyframes flash{0%{opacity:.5}100%{opacity:0}}
-.ring{position:absolute;left:50%;top:50%;width:40%;aspect-ratio:1;border:2px solid var(--steel);border-radius:50%;transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none}
+.ring{position:absolute;left:50%;top:50%;width:40%;aspect-ratio:1;border:2px solid var(--gold);box-shadow:0 0 12px var(--gold);border-radius:50%;transform:translate(-50%,-50%) scale(0);opacity:0;pointer-events:none}
 .card.cut .ring{animation:ring .6s ease-out .14s}
 @keyframes ring{0%{opacity:.9;transform:translate(-50%,-50%) scale(.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(2.6)}}
-.spark{position:absolute;left:50%;top:50%;width:3px;height:12px;background:#fff;box-shadow:0 0 6px var(--steel);border-radius:2px;opacity:0;pointer-events:none}
+.spark{position:absolute;left:50%;top:50%;width:3px;height:12px;background:#fff6d1;box-shadow:0 0 6px var(--gold),0 0 12px var(--gold);border-radius:2px;opacity:0;pointer-events:none}
+.spark.dot{width:4px;height:4px;border-radius:50%}
 .card.cut .spark{animation:spark .6s ease-out .14s forwards}
 @keyframes spark{0%{opacity:1;transform:translate(-50%,-50%) rotate(var(--a)) translateY(0)}100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--a)) translateY(calc(var(--d) * -1))}}
 .card.cracked{border-color:var(--blood)}
@@ -1066,7 +1067,7 @@ function setKanji(k){
   ['kWhole','kTop','kBot'].forEach(id=>{ $(id).textContent=k; $(id).style.setProperty('--ks',ks); });
 }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]] } return a; }
-(function makeSparks(){ let h=''; for(let i=0;i<12;i++){ h+=`<i class="spark" style="--a:${i*30+(i%2?8:-6)}deg;--d:${50+(i*13)%40}px"></i>`; } $('sparks').innerHTML=h; })();
+(function makeSparks(){ let h=''; for(let i=0;i<28;i++){ const dot=i%3===2; const len=dot?0:(6+(i*7)%10); const dist=60+(i*17)%90; const delay=(i%4)*0.03; h+=`<i class="spark${dot?' dot':''}" style="--a:${i*(360/28)+((i*37)%11)-5}deg;--d:${dist}px;${dot?'':`height:${len}px;`}animation-delay:${(0.14+delay).toFixed(2)}s"></i>`; } $('sparks').innerHTML=h; })();
 
 function pickNext(){
   const t=today();
