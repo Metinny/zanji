@@ -728,13 +728,17 @@ const DECKS = {
 let deckId = store.get('zanji.deckId') || 'n5'; if(!DECKS[deckId]) deckId='n5';
 let deck = DECKS[deckId].words;
 function setDeck(id){ deckId=id; store.set('zanji.deckId',id); deck=DECKS[id].words; }
-const kaiAudio = {};
+const kaiAudio = {}, kaiSent = {};
+const N5_TH = {"水": "ฉันดื่มน้ำ", "火": "ดับไฟซะ", "山": "อากาศบนภูเขาสะอาด", "川": "ข้ามแม่น้ำสายเล็ก ๆ มาแล้ว", "木": "ในสวนมีต้นไม้", "花": "แม่ชอบดอกไม้", "雨": "ฝนกำลังตก", "空": "ท้องฟ้าสีฟ้าสด", "月": "คืนนี้เห็นพระจันทร์สว่างชัด", "人": "คนนั้นเป็นคนดี", "犬": "อยากได้โปสเตอร์รูปหมา", "猫": "ฉันชอบแมวมาก", "魚": "จะย่างปลาประมาณ 10 นาที", "鳥": "นกกำลังบิน", "手": "ใครเข้าใจแล้วยกมือขึ้นหน่อย", "目": "น้องลาลาตาโต", "口": "อ้าปากกว้าง ๆ นะครับ", "耳": "เธอหูไม่ค่อยได้ยิน", "本": "เป็นหนังสือที่ดีเลยนะ", "車": "น้องชายซื้อรถ", "学校": "โรงเรียนอยู่ที่ญี่ปุ่น", "先生": "ฉันอยากเป็นครูสอนภาษาญี่ปุ่น", "学生": "น้องชายเป็นนักเรียน", "友達": "ไปร้านอาหารกับเพื่อนมา", "時間": "ตอนนี้ไม่มีเวลา", "名前": "บอกชื่อของคุณหน่อย", "食べる": "เมื่อวานกินแกงไทย", "飲む": "ฉันดื่มน้ำ", "見る": "พี่ชายดูทีวีทุกวัน", "行く": "ไปโรงเรียน", "来る": "พรุ่งนี้จะมาไหม", "書く": "เขียนจดหมายถึงเขาแล้ว", "読む": "อ่านหนังสือภาษาญี่ปุ่น", "話す": "คุยกับครูเป็นภาษาญี่ปุ่น", "大きい": "เขาอาศัยอยู่ในบ้านหลังใหญ่", "小さい": "กล้องของฉันเล็ก", "新しい": "รถของเขาใหม่", "古い": "ฉันชอบรถเก่า"};
 function attachAudio(words){ words.forEach(w=>{ if(!w.wa && kaiAudio[w.k]) w.wa=kaiAudio[w.k]; }); }
 function loadKaishi(){
   fetch('kaishi.json').then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }).then(j=>{
     DECKS.kaishi.words = j.words.map((e,i)=>({k:e.k, r:e.r, m:e.m, en:'', ex:e.ex, exr:e.exr, fu:e.fu||'', exen:e.exen, th:'', ctx:e.ctx, ctxLabel:'Note', wa:e.wa, sa:e.sa, idx:i}));
-    j.words.forEach(e=>{ if(e.wa && !kaiAudio[e.k]) kaiAudio[e.k]=e.wa; });
+    j.words.forEach(e=>{ if(e.wa && !kaiAudio[e.k]) kaiAudio[e.k]=e.wa; if(e.sa && !kaiSent[e.k]) kaiSent[e.k]=e; });
     attachAudio(DECKS.n5.words); attachAudio(DECKS.my.words);
+    // N5: use Kaishi's example sentence so it has real recorded audio
+    DECKS.n5.words.forEach(w=>{ const e=kaiSent[w.k]; if(e && N5_TH[w.k]){ Object.assign(w,{ex:e.ex, fu:e.fu||'', exr:e.exr, exen:e.exen, th:N5_TH[w.k], sa:e.sa}); } });
+    DECKS.my.words.forEach(w=>{ const e=kaiSent[w.k]; if(e && !w.ex){ Object.assign(w,{ex:e.ex, fu:e.fu||'', exr:e.exr, exen:e.exen, sa:e.sa}); } });
     DECKS.kaishi.loading=false;
     if(deckId==='kaishi') deck=DECKS.kaishi.words;
     renderHome();
