@@ -523,6 +523,7 @@ select{height:42px;background:var(--ink-2);color:var(--paper);border:1px solid v
       <input type="file" id="importFile" class="vh" accept=".json,application/json">
     </div>
   </div>
+    <p class="syncnote">เสียงพากย์: VOICEVOX:冥鳴ひまり · เสียงคำและประโยคชุด Kaishi จากเด็ค Kaishi 1.5k</p>
  </div>
 </div>
 
@@ -565,7 +566,7 @@ select{height:42px;background:var(--ink-2);color:var(--paper);border:1px solid v
     </div>
     <div class="field">
       <label>แหล่งเสียง</label>
-      <div class="seg-ctl" id="srcCtl"><button type="button" data-v="deck">เสียงจริงจากเด็ค</button><button type="button" data-v="tts">เสียงผู้หญิงสังเคราะห์</button></div>
+      <div class="seg-ctl" id="srcCtl"><button type="button" data-v="himari">冥鳴ひまり</button><button type="button" data-v="deck">เสียงจากเด็ค</button><button type="button" data-v="tts">เสียงของเครื่อง</button></div>
       <p class="note" id="srcNote"></p>
     </div>
     <div class="field">
@@ -773,7 +774,7 @@ let sayGen=0;
 let voicePref = store.get('zanji.voice') || '';
 let rateMul = +(store.get('zanji.rate') || 1); if(!(rateMul>=.6 && rateMul<=1.2)) rateMul=1;
 let voiceStyle = store.get('zanji.style') || 'normal';
-let audioSrc = store.get('zanji.src') || 'deck';
+let audioSrc = store.get('zanji.src2') || 'himari';
 const VOICE_RANK = [/nanami/i,/aoi|mayu|shiori/i,/google/i,/kyoko/i,/haruka|ayumi|sayaka|mizuki|o-ren/i,/natural|online|neural/i,/keita|otoya|ichiro|hattori|daichi|naoki/i];
 function allVoices(){ try{ return window.speechSynthesis ? speechSynthesis.getVoices() : [] }catch(e){ return [] } }
 const isJaVoice = v => /^ja([-_]|$)/i.test(v.lang||'') || /japan|日本|nanami|haruka|ayumi|ichiro|kyoko|otoya|sayaka|keita|mizuki|takumi|hattori|o-ren/i.test(v.name||'');
@@ -803,22 +804,30 @@ function speakNow(it, begin, finish){
 /* recorded audio from the Kaishi packs */
 const packCache=new Map(), clipCache=new Map();
 let clipSrc=null;
-function loadPack(i){
-  if(!packCache.has(i)){
-    const pr=fetch('a'+String(i).padStart(2,'0')+'.mp3').then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); });
-    pr.catch(()=>packCache.delete(i)); packCache.set(i,pr);
+let HIM=null;
+fetch('himari.json').then(r=>r.ok?r.json():null).then(j=>{ if(j&&j.clips) HIM=j.clips; }).catch(()=>{});
+function loadPack(i,pre='a'){
+  const pk=pre+i;
+  if(!packCache.has(pk)){
+    const pr=fetch(pre+String(i).padStart(2,'0')+'.mp3').then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); });
+    pr.catch(()=>packCache.delete(pk)); packCache.set(pk,pr);
   }
-  return packCache.get(i);
+  return packCache.get(pk);
 }
-function getClip(c){
-  const key=c.join(':');
+function pickClip(text,clip){
+  if(audioSrc==='himari' && HIM && HIM[text]) return {c:HIM[text], pre:'v'};
+  if(audioSrc==='tts' && jaVoice()) return null;
+  return clip ? {c:clip, pre:'a'} : null;
+}
+function getClip(c,pre='a'){
+  const key=pre+c.join(':');
   if(!clipCache.has(key)){
-    const pr=loadPack(c[0]).then(buf=>{ const ctx=audio(); if(!ctx) throw new Error('muted'); const ab=buf.slice(c[1],c[1]+c[2]); return new Promise((res,rej)=>ctx.decodeAudioData(ab,res,rej)); });
+    const pr=loadPack(c[0],pre).then(buf=>{ const ctx=audio(); if(!ctx) throw new Error('muted'); const ab=buf.slice(c[1],c[1]+c[2]); return new Promise((res,rej)=>ctx.decodeAudioData(ab,res,rej)); });
     pr.catch(()=>clipCache.delete(key)); clipCache.set(key,pr);
   }
   return clipCache.get(key);
 }
-function warmClip(c){ if(c && !muted) getClip(c).catch(()=>{}); }
+function warmClip(c,text){ if(muted) return; const pc=pickClip(text,c); if(pc) getClip(pc.c,pc.pre).catch(()=>{}); }
 function stopClip(){ try{ clipSrc && clipSrc.stop(); }catch(e){} clipSrc=null; }
 function sayQueue(items){
   stopClip();
@@ -834,13 +843,14 @@ function sayQueue(items){
     const begin=()=>{ if(started) return; started=true; it.onstart && it.onstart(); };
     const finish=()=>{ if(done) return; done=true; setTimeout(step, it.gap ?? 450); };
     if(muted){ begin(); finish(); return; }
-    if(it.clip && !(audioSrc==='tts' && jaVoice())){
-      getClip(it.clip).then(b=>{
+    const pc=pickClip(it.text,it.clip);
+    if(pc){
+      getClip(pc.c,pc.pre).then(b=>{
         if(my!==sayGen) return;
         const ctx=audio(); if(!ctx){ begin(); finish(); return; }
         const src=ctx.createBufferSource(); src.buffer=b; src.connect(ctx.destination);
         src.onended=()=>{ if(clipSrc===src) clipSrc=null; finish(); };
-        clipSrc=src; src.start(); begin(); setSpeechState('กำลังเล่นเสียงจริงจากเด็ค Kaishi');
+        clipSrc=src; src.start(); begin(); setSpeechState(pc.pre==='v'?'กำลังเล่นเสียง 冥鳴ひまり (VOICEVOX)':'กำลังเล่นเสียงจริงจากเด็ค Kaishi');
         setTimeout(()=>{ if(my===sayGen) finish(); }, b.duration*1000+1500);
       }).catch(()=>{ if(my!==sayGen) return; if(!ss){ begin(); finish(); return; } try{ speakNow(it,begin,finish); }catch(e){ begin(); finish(); } setTimeout(()=>{ if(my===sayGen) finish(); }, 2000 + it.text.length*300); });
       return;
@@ -1087,7 +1097,7 @@ function nextQuestion(){
   if(!pk){ sessionDone(); return; }
   const {w,review,kind}=pk;
   S.cur=w; S.review=review; S.kind=kind; S.locked=false;
-  warmClip(w.wa); warmClip(w.sa);
+  warmClip(w.wa,w.r); warmClip(w.sa,w.exr||w.ex);
   S.recent.push(w.k); if(S.recent.length>Math.min(6,deck.length-4)) S.recent.shift();
   $('app').classList.remove('learn');
   $('learnbox').hidden=true; $('learnbox').innerHTML='';
@@ -1526,11 +1536,12 @@ function renderReads(){ [...$('readsCtl').children].forEach(b=>b.setAttribute('a
 function renderSrc(){
   [...$('srcCtl').children].forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===audioSrc)));
   const v=jaVoice();
-  $('srcNote').textContent = audioSrc==='deck' ? 'เสียงคนจริงจากเด็ค Kaishi ใช้ได้ทุกเครื่อง (คำที่ไม่มีในเด็คจะใช้เสียงสังเคราะห์)'
+  $('srcNote').textContent = audioSrc==='himari' ? (HIM ? 'เสียงตัวละคร 冥鳴ひまり จาก VOICEVOX ใช้ได้ทุกเครื่อง' : 'กำลังโหลดเสียง 冥鳴ひまり… ถ้ายังไม่มี จะใช้เสียงจากเด็คแทน')
+    : audioSrc==='deck' ? 'เสียงคนจริงจากเด็ค Kaishi ใช้ได้ทุกเครื่อง (คำที่ไม่มีในเด็คจะใช้เสียงสังเคราะห์)'
     : v ? 'ใช้เสียง '+v.name+' · เปิด "สไตล์อนิเมะ" ด้านล่างให้เสียงสูงและสดใสขึ้น'
     : 'เครื่องนี้ยังไม่มีเสียงญี่ปุ่น เลยเล่นเสียงจากเด็คแทน · เปิดเกมใน Microsoft Edge จะได้เสียงผู้หญิง Nanami ทันที';
 }
-$('srcCtl').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; audioSrc=b.dataset.v; store.set('zanji.src',audioSrc); renderSrc(); sayQueue([{text:'こんにちは。いっしょにべんきょうしよう！', clip:null}]); });
+$('srcCtl').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; audioSrc=b.dataset.v; store.set('zanji.src2',audioSrc); renderSrc(); audio(); sayQueue([{text: audioSrc==='himari' ? 'いっしょにべんきょうしましょう。' : 'こんにちは。いっしょにべんきょうしよう！', clip:null}]); });
 function renderStyle(){ [...$('styleCtl').children].forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.v===voiceStyle))); }
 $('styleCtl').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; voiceStyle=b.dataset.v; store.set('zanji.style',voiceStyle); renderStyle(); sayQueue([{text: voiceStyle==='anime' ? 'がんばって！いっしょにべんきょうしよう！' : 'こんにちは。にほんごをべんきょうしましょう。'}]); });
 function renderRate(){ $('rateIn').value=rateMul; $('rateOut').textContent=RATE_LABEL[Math.round(rateMul*10)/10]||rateMul; }
