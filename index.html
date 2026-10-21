@@ -564,6 +564,11 @@ select{height:42px;background:var(--ink-2);color:var(--paper);border:1px solid v
       <select id="voiceSel"></select>
     </div>
     <div class="field">
+      <label>แหล่งเสียง</label>
+      <div class="seg-ctl" id="srcCtl"><button type="button" data-v="deck">เสียงจริงจากเด็ค</button><button type="button" data-v="tts">เสียงผู้หญิงสังเคราะห์</button></div>
+      <p class="note" id="srcNote"></p>
+    </div>
+    <div class="field">
       <label>สไตล์เสียง</label>
       <div class="seg-ctl" id="styleCtl"><button type="button" data-v="normal">ปกติ</button><button type="button" data-v="anime">สไตล์อนิเมะ</button></div>
     </div>
@@ -768,7 +773,8 @@ let sayGen=0;
 let voicePref = store.get('zanji.voice') || '';
 let rateMul = +(store.get('zanji.rate') || 1); if(!(rateMul>=.6 && rateMul<=1.2)) rateMul=1;
 let voiceStyle = store.get('zanji.style') || 'normal';
-const VOICE_RANK = [/nanami/i,/google/i,/kyoko/i,/haruka|ayumi|sayaka|mizuki|o-ren/i,/natural|online|neural/i,/keita|otoya|ichiro|hattori/i];
+let audioSrc = store.get('zanji.src') || 'deck';
+const VOICE_RANK = [/nanami/i,/aoi|mayu|shiori/i,/google/i,/kyoko/i,/haruka|ayumi|sayaka|mizuki|o-ren/i,/natural|online|neural/i,/keita|otoya|ichiro|hattori|daichi|naoki/i];
 function allVoices(){ try{ return window.speechSynthesis ? speechSynthesis.getVoices() : [] }catch(e){ return [] } }
 const isJaVoice = v => /^ja([-_]|$)/i.test(v.lang||'') || /japan|日本|nanami|haruka|ayumi|ichiro|kyoko|otoya|sayaka|keita|mizuki|takumi|hattori|o-ren/i.test(v.name||'');
 function jaVoices(){
@@ -828,7 +834,7 @@ function sayQueue(items){
     const begin=()=>{ if(started) return; started=true; it.onstart && it.onstart(); };
     const finish=()=>{ if(done) return; done=true; setTimeout(step, it.gap ?? 450); };
     if(muted){ begin(); finish(); return; }
-    if(it.clip){
+    if(it.clip && !(audioSrc==='tts' && jaVoice())){
       getClip(it.clip).then(b=>{
         if(my!==sayGen) return;
         const ctx=audio(); if(!ctx){ begin(); finish(); return; }
@@ -1517,6 +1523,14 @@ $('mapReplace').addEventListener('click',()=>applyAnki(true));
 /* ---------- controls ---------- */
 function renderMute(){ [...$('muteCtl').children].forEach(b=>b.setAttribute('aria-pressed', String((b.dataset.v==='1')===muted))); $('voiceBtn').textContent=muted?'เสียงปิดอยู่':'ตั้งค่าเสียง'; }
 function renderReads(){ [...$('readsCtl').children].forEach(b=>b.setAttribute('aria-pressed', String(+b.dataset.v===openReads))); }
+function renderSrc(){
+  [...$('srcCtl').children].forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===audioSrc)));
+  const v=jaVoice();
+  $('srcNote').textContent = audioSrc==='deck' ? 'เสียงคนจริงจากเด็ค Kaishi ใช้ได้ทุกเครื่อง (คำที่ไม่มีในเด็คจะใช้เสียงสังเคราะห์)'
+    : v ? 'ใช้เสียง '+v.name+' · เปิด "สไตล์อนิเมะ" ด้านล่างให้เสียงสูงและสดใสขึ้น'
+    : 'เครื่องนี้ยังไม่มีเสียงญี่ปุ่น เลยเล่นเสียงจากเด็คแทน · เปิดเกมใน Microsoft Edge จะได้เสียงผู้หญิง Nanami ทันที';
+}
+$('srcCtl').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; audioSrc=b.dataset.v; store.set('zanji.src',audioSrc); renderSrc(); sayQueue([{text:'こんにちは。いっしょにべんきょうしよう！', clip:null}]); });
 function renderStyle(){ [...$('styleCtl').children].forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.v===voiceStyle))); }
 $('styleCtl').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; voiceStyle=b.dataset.v; store.set('zanji.style',voiceStyle); renderStyle(); sayQueue([{text: voiceStyle==='anime' ? 'がんばって！いっしょにべんきょうしよう！' : 'こんにちは。にほんごをべんきょうしましょう。'}]); });
 function renderRate(){ $('rateIn').value=rateMul; $('rateOut').textContent=RATE_LABEL[Math.round(rateMul*10)/10]||rateMul; }
@@ -1528,7 +1542,7 @@ $('voiceTest').addEventListener('click',()=>{ renderVoices(); sayQueue([{text:'�
 let voiceReturnLocked=false;
 let voicePoll=null;
 function pollVoices(){ let n=0; clearInterval(voicePoll); voicePoll=setInterval(()=>{ renderVoices(); if(++n>10 || jaVoices().length) clearInterval(voicePoll); },800); }
-function openVoice(){ setSpeechState(speechState); renderVoices(); pollVoices(); renderMute(); renderReads(); renderRate(); renderStyle(); $('voiceOv').hidden=false; $('voiceSel').focus(); }
+function openVoice(){ setSpeechState(speechState); renderVoices(); pollVoices(); renderMute(); renderReads(); renderRate(); renderStyle(); renderSrc(); $('voiceOv').hidden=false; $('voiceSel').focus(); }
 $('voiceBtn').addEventListener('click',openVoice);
 $('voiceBtn2').addEventListener('click',openVoice);
 $('voiceClose').addEventListener('click',()=>{ $('voiceOv').hidden=true; });
