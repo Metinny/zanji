@@ -322,6 +322,25 @@ select{height:42px;background:var(--ink-2);color:var(--paper);border:1px solid v
 .duebox .lbl{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
 .duebox b{font:800 64px/1 var(--ui);font-variant-numeric:tabular-nums;color:var(--paper)}
 .duebox .sub{font-size:13px;color:var(--mute)}
+.jlbox{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:18px;align-items:center}
+@media (max-width:560px){ .jlbox{grid-template-columns:1fr} }
+.jlnow{display:flex;flex-direction:column;gap:4px}
+.jlnow .lbl{font-size:12px;letter-spacing:.12em;color:var(--mute)}
+.jlnow b{font:800 44px/1 var(--ui);color:var(--gold)}
+.jlnow .sub{font-size:13px;color:var(--mute);line-height:1.45}
+.jlbars{display:flex;flex-direction:column;gap:9px}
+.jlrow{display:grid;grid-template-columns:34px 1fr 74px;grid-template-areas:"n bar v" ". sub sub";column-gap:10px;row-gap:2px;align-items:center}
+.jln{grid-area:n;font-weight:800;color:var(--mute)}
+.jlrow.pass .jln{color:var(--gold)} .jlrow.jnext .jln{color:var(--paper)}
+.jlbar{grid-area:bar;position:relative;height:12px;border-radius:6px;background:color-mix(in srgb,var(--mute) 22%,transparent);overflow:hidden}
+.jlbar i{position:absolute;top:0;bottom:0;left:0;border-radius:6px}
+.jlbar .seen{background:color-mix(in srgb,var(--steel) 35%,transparent)}
+.jlbar .known{background:var(--steel)}
+.jlrow.pass .jlbar .known{background:var(--gold)}
+.jlbar .mark{width:2px;background:var(--paper);opacity:.55;border-radius:0}
+.jlv{grid-area:v;text-align:right;font-variant-numeric:tabular-nums;font-size:13px}
+.jlsub{grid-area:sub;font-size:12px;color:var(--mute)}
+.jlnote{margin:12px 0 0;font-size:12px;color:var(--mute);line-height:1.55}
 .herobtns{display:flex;flex-direction:column;gap:8px}
 .herobtns .next,.herobtns .ghost{width:100%}
 .herobtns button:disabled{opacity:.4;cursor:not-allowed}
@@ -451,15 +470,13 @@ select{height:42px;background:var(--ink-2);color:var(--paper);border:1px solid v
   <header class="hhead">
     <div><h1 class="htitle">斬字</h1><p class="hsub">ZANJI · KANJI DUEL</p></div>
     <div class="hbtns">
-      <button class="ghost" id="deckBtn" type="button">คลังคำศัพท์ / นำเข้า Anki</button>
+      <button class="ghost" id="deckBtn" type="button" hidden>คลังคำศัพท์ / นำเข้า Anki</button>
       <button class="ghost" id="voiceBtn2" type="button">ตั้งค่าเสียง</button>
     </div>
   </header>
 
   <div class="deckpick" id="deckPick">
-    <button type="button" data-d="n5"><span>N5 พื้นฐาน</span><small id="cnt_n5">42 คำ · มีฉาก</small></button>
-    <button type="button" data-d="kaishi"><span>Kaishi 1.5k</span><small id="cnt_kaishi">กำลังโหลด…</small></button>
-    <button type="button" data-d="my"><span>คลังของฉัน</span><small id="cnt_my">0 คำ</small></button>
+    <button type="button" data-d="kaishi"><span>Let's go DECK</span><small id="cnt_kaishi">กำลังโหลด…</small></button>
   </div>
   <p class="decknote" id="deckNote"></p>
 
@@ -478,6 +495,15 @@ select{height:42px;background:var(--ink-2);color:var(--paper);border:1px solid v
   </section>
 
   <div class="tiles" id="tiles"></div>
+
+  <section class="sec">
+    <h2>ระดับ JLPT โดยประมาณ <em id="jlSum"></em></h2>
+    <div class="jlbox">
+      <div class="jlnow"><span class="lbl">ระดับคำศัพท์ตอนนี้</span><b id="jlLevel">–</b><span class="sub" id="jlNext"></span></div>
+      <div class="jlbars" id="jlBars"></div>
+    </div>
+    <p class="jlnote">นับเฉพาะคำที่ <b>ทบทวนผ่านอย่างน้อย 1 รอบ</b> (ตอบถูกในวันที่ถึงกำหนด 2 ครั้งขึ้นไป) · ผ่านระดับไหน = จำคำของระดับนั้นในเด็คได้ 80% ขึ้นไป และผ่านทุกระดับที่ง่ายกว่า · ประเมินจากคำศัพท์อย่างเดียว ไม่รวมไวยากรณ์ การฟัง หรือการอ่าน และเด็คนี้มีคำไม่ครบทุกคำในรายการ JLPT</p>
+  </section>
 
   <section class="sec">
     <h2>ความก้าวหน้า 30 วัน <em id="chartSum"></em></h2>
@@ -524,7 +550,7 @@ select{height:42px;background:var(--ink-2);color:var(--paper);border:1px solid v
       <input type="file" id="importFile" class="vh" accept=".json,application/json">
     </div>
   </div>
-    <p class="syncnote">เสียงพากย์: VOICEVOX:冥鳴ひまり · เสียงคำและประโยคชุด Kaishi จากเด็ค Kaishi 1.5k</p>
+    <p class="syncnote">เสียงพากย์: VOICEVOX:冥鳴ひまり · คำศัพท์ เสียงคำและประโยคจากเด็ค Kaishi 1.5k · ระดับ JLPT อ้างอิงรายการคำจาก open-anki-jlpt-decks (ไม่ใช่รายการทางการ)</p>
  </div>
 </div>
 
@@ -729,10 +755,10 @@ function parseDeck(text){
 let deckText = store.get('zanji.deck') || '';
 const DECKS = {
   n5:{name:'N5 พื้นฐาน', words:parseDeck(DEFAULT_DECK).words},
-  kaishi:{name:'Kaishi 1.5k', words:[], loading:true},
+  kaishi:{name:"Let's go DECK", words:[], loading:true},
   my:{name:'คลังของฉัน', words:parseDeck(deckText).words},
 };
-let deckId = store.get('zanji.deckId') || 'n5'; if(!DECKS[deckId]) deckId='n5';
+let deckId = 'kaishi';   // only "Let's go DECK" is offered now
 let deck = DECKS[deckId].words;
 function setDeck(id){ deckId=id; store.set('zanji.deckId',id); deck=DECKS[id].words; }
 const kaiAudio = {}, kaiSent = {};
@@ -740,7 +766,15 @@ const N5_TH = {"水": "ฉันดื่มน้ำ", "火": "ดับไฟ�
 function attachAudio(words){ words.forEach(w=>{ if(!w.wa && kaiAudio[w.k]) w.wa=kaiAudio[w.k]; }); }
 function loadKaishi(){
   fetch('kaishi.json').then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }).then(j=>{
-    DECKS.kaishi.words = j.words.map((e,i)=>({k:e.k, r:e.r, m:e.m, en:e.en||'', sc:e.sc||null, ex:e.ex, exr:e.exr, fu:e.fu||'', exen:e.exen, th:'', ctx:e.ctx, ctxLabel:'Note', wa:e.wa, sa:e.sa, idx:i}));
+    DECKS.kaishi.words = j.words.map((e,i)=>({k:e.k, r:e.r, m:e.m, en:e.en||'', sc:e.sc||null, jl:e.jl||0, ex:e.ex, exr:e.exr, fu:e.fu||'', exen:e.exen, th:'', ctx:e.ctx, ctxLabel:'Note', wa:e.wa, sa:e.sa, idx:i}));
+    JL_TOTAL = j.jlptTotals || null;
+    // the old N5 set had hand-made scenes, Thai notes and Thai sentence translations: give them to the matching words here
+    const n5={}; DECKS.n5.words.forEach(w=>{ if(!n5[w.k]) n5[w.k]=w; });
+    DECKS.kaishi.words.forEach(w=>{ const o=n5[w.k]; if(!o || w.r!==o.r) return;
+      if(o.sc) w.sc=o.sc;
+      if(N5_TH[w.k]) w.th=N5_TH[w.k];
+      if(o.ctx) { w.ctx=o.ctx+(w.ctx?' · '+w.ctx:''); w.ctxLabel='วิธีใช้'; } });
+    migrateN5();
     j.words.forEach(e=>{ if(e.wa && !kaiAudio[e.k]) kaiAudio[e.k]=e.wa; if(e.sa && !kaiSent[e.k]) kaiSent[e.k]=e; });
     attachAudio(DECKS.n5.words); attachAudio(DECKS.my.words);
     // N5: use Kaishi's example sentence so it has real recorded audio
@@ -962,6 +996,43 @@ function today(){ const d=new Date(); return Math.floor(Date.UTC(d.getFullYear()
 function dayDate(n){ const d=new Date(n*864e5); return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()); }
 const ckey=(id,w)=>id+'|'+w.k;
 const cardOf=(w,id=deckId)=>P.cards[ckey(id,w)];
+// progress from the removed N5 deck carries over to the same word in Let's go DECK
+function migrateN5(){
+  let moved=0;
+  Object.keys(P.cards).forEach(k=>{ if(!k.startsWith('n5|')) return; const nk='kaishi|'+k.slice(3);
+    const a=P.cards[k], b=P.cards[nk];
+    if(!b || (a[5]||0)>(b[5]||0)) P.cards[nk]=a;   // keep whichever was answered more recently
+    delete P.cards[k]; moved++; });
+  if(moved) saveP();
+}
+
+/* ---------- JLPT estimate ---------- */
+let JL_TOTAL=null;
+const JL_PASS=0.8;          // share of a level's deck words you must know to count as passed
+const knownCard=c=>c && c[0]>=2;
+function jlStats(){
+  const s={}; [5,4,3,2,1].forEach(n=>s[n]={deck:0,known:0,seen:0});
+  DECKS.kaishi.words.forEach(w=>{ if(!w.jl) return; const c=cardOf(w,'kaishi'); const x=s[w.jl]; x.deck++; if(c) x.seen++; if(knownCard(c)) x.known++; });
+  return s;
+}
+function renderJL(){
+  const box=$('jlBars'); if(!box) return;
+  if(DECKS.kaishi.loading || DECKS.kaishi.error){ box.innerHTML=''; $('jlLevel').textContent='–'; $('jlNext').textContent=''; $('jlSum').textContent=''; return; }
+  const s=jlStats(); let passed=0;
+  for(const n of [5,4,3,2,1]){ const x=s[n]; if(x.deck && x.known/x.deck>=JL_PASS) passed=n; else break; }
+  const next = passed ? passed-1 : 5;
+  const tot=[5,4,3,2,1].reduce((a,n)=>a+s[n].known,0);
+  $('jlLevel').textContent = passed ? 'N'+passed : 'ยังไม่ถึง N5';
+  $('jlNext').textContent = next>=1 ? `กำลังไต่ไป N${next}: จำได้ ${s[next].known}/${s[next].deck} คำ · อีก ${Math.max(0,Math.ceil(s[next].deck*JL_PASS)-s[next].known)} คำจะผ่าน` : 'ผ่านครบทุกระดับในเด็คนี้แล้ว';
+  $('jlSum').textContent = `จำได้ ${fmtN(tot)} คำที่มีระดับ`;
+  box.innerHTML='';
+  [5,4,3,2,1].forEach(n=>{ const x=s[n]; if(!x.deck) return;
+    const pk=x.known/x.deck*100, ps=x.seen/x.deck*100;
+    const row=document.createElement('div'); row.className='jlrow'+(n===passed?' pass':'')+(n===next?' jnext':'');
+    const off = JL_TOTAL && JL_TOTAL[n] ? ` · รายการเต็ม ~${fmtN(JL_TOTAL[n])}` : '';
+    row.innerHTML=`<span class="jln">N${n}</span><div class="jlbar"><i class="seen" style="width:${ps}%"></i><i class="known" style="width:${pk}%"></i><i class="mark" style="left:${JL_PASS*100}%"></i></div><span class="jlv">${x.known}/${x.deck}</span><span class="jlsub">เคยเจอ ${x.seen} คำ${off}</span>`;
+    box.appendChild(row); });
+}
 function newToday(){ const d=P.days[today()]; return d?d[2]:0; }
 function newLeft(){ return Math.max(0,(P.newPer||10)-newToday()); }
 function record(w,good){
@@ -1265,14 +1336,11 @@ function renderHome(){
   const t=today();
   // deck picker
   [...$('deckPick').children].forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.d===deckId)));
-  $('cnt_n5').textContent=DECKS.n5.words.length+' คำ · มีฉากตัวละคร';
-  $('cnt_kaishi').textContent= DECKS.kaishi.loading?'กำลังโหลด…' : DECKS.kaishi.error?'โหลดไม่สำเร็จ' : fmtN(DECKS.kaishi.words.length)+' คำ · เสียงจริง';
-  $('cnt_my').textContent=DECKS.my.words.length+' คำ';
+  $('cnt_kaishi').textContent= DECKS.kaishi.loading?'กำลังโหลด…' : DECKS.kaishi.error?'โหลดไม่สำเร็จ' : fmtN(DECKS.kaishi.words.length)+' คำ · ไทย + English · เสียงจริง';
   const D=DECKS[deckId]; const words=D.words;
-  $('deckNote').textContent = deckId==='kaishi'
-    ? (D.loading ? 'กำลังโหลดชุดคำ Kaishi…' : D.error ? 'โหลดชุดคำ Kaishi ไม่สำเร็จ ลองรีเฟรชหน้าอีกครั้ง' : 'เด็คจาก Anki ของคุณ เรียงคำตามลำดับเรียนของ Kaishi มีเสียงอ่านจริงทั้งคำและประโยค ความหมายเป็นภาษาอังกฤษ')
-    : deckId==='my' ? (words.length<4 ? 'ยังไม่มีคำในคลังของฉัน กด "คลังคำศัพท์ / นำเข้า Anki" เพื่อเพิ่มคำ (ต้องมีอย่างน้อย 4 คำ)' : 'คำที่คุณเพิ่มเองหรือนำเข้าจาก Anki')
-    : 'คำพื้นฐานระดับ N5 พร้อมฉากตัวละครแสดงวิธีใช้ ความหมายไทยและอังกฤษ';
+  $('deckNote').textContent = D.loading ? 'กำลังโหลดคำศัพท์…' : D.error ? 'โหลดคำศัพท์ไม่สำเร็จ ลองรีเฟรชหน้าอีกครั้ง'
+    : 'คำศัพท์ 1,500 คำ เรียงจากคำที่ใช้บ่อยที่สุดไปหาน้อย มีความหมายไทยและอังกฤษ เสียงอ่านทั้งคำและประโยค';
+  renderJL();
   // counts
   let seen=0, dueN=0, mastered=0, newRem=0;
   words.forEach(w=>{ const c=cardOf(w); if(!c){ newRem++; return; } seen++; if(c[1]<=t) dueN++; if(c[0]>=5) mastered++; });
